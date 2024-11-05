@@ -287,3 +287,59 @@ circle.opcursor {
     line-height: 10px;
   }
 }
+
+/* Light Theme */
+:root {
+  --background-color: #ffffff;
+  --text-color: #000000;
+  --menu-background-color: rgba(100, 200, 255, 0.7);
+  --menu-text-color: #000000;
+  --tool-background-color: #ffffff;
+  --tool-border-color: #eeeeee;
+  --tool-shadow-color: #8fa2bc;
+  --tool-active-background-color: #eeeeff;
+  --tool-active-shadow-color: #ddeeff;
+  --tool-current-background: linear-gradient(#96e1ff, #36a2ff);
+  --tool-current-shadow-color: #0074d9;
+}
+
+/* Dark Theme */
+[data-theme="dark"] {
+  --background-color: #121212;
+  --text-color: #ffffff;
+  --menu-background-color: rgba(50, 50, 50, 0.9);
+  --menu-text-color: #ffffff;
+  --tool-background-color: #333333;
+  --tool-border-color: #555555;
+  --tool-shadow-color: #222222;
+  --tool-active-background-color: #444444;
+  --tool-active-shadow-color: #666666;
+  --tool-current-background: linear-gradient(#555555, #333333);
+  --tool-current-shadow-color: #888888;
+}
+
+body {
+  background-color: var(--background-color);
+  color: var(--text-color);
+}
+
+#menu {
+  background-color: var(--menu-background-color);
+  color: var(--menu-text-color);
+}
+
+#menu .tool {
+  background-color: var(--tool-background-color);
+  border: 1px solid var(--tool-border-color);
+  box-shadow: inset 0 0 3px var(--tool-shadow-color);
+}
+
+#menu .tool:active {
+  background-color: var(--tool-active-background-color);
+  box-shadow: inset 0 0 1px var(--tool-active-shadow-color);
+}
+
+#menu .tool.curTool {
+  background: var(--tool-current-background);
+  box-shadow: 0 0 5px var(--tool-current-shadow-color);
+}
