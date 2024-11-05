@@ -41,7 +41,7 @@
         d: "M 30 0 L 0 0 0 30",
         fill: "none",
         stroke: "gray",
-        "stroke-width": "0.5",
+        "stroke-width": "1",
       }),
     );
     // (outer) grid
@@ -63,7 +63,7 @@
         d: "M 300 0 L 0 0 0 300",
         fill: "none",
         stroke: "gray",
-        "stroke-width": "1",
+        "stroke-width": "2",
       }),
     );
     // dots
