@@ -85,6 +85,17 @@
 					</button>
 					<label class="tool-name" for="themeToggle">{{translations.theme}}</label>
 				</li>
+				<li class="tool" tabindex="-1">
+					<img class="tool-icon" width="60" height="60" src="icon-size.svg" alt="grid size" />
+					<label class="tool-name slider" for="gridSize">
+						<span>{{translations.grid_size}}</span>
+						<input type="range" id="gridSize" value="30" min="10" max="100" step="1" class="rangeChooser" />
+					</label>
+				</li>
+				<li class="tool" tabindex="-1">
+					<input class="tool-icon" type="color" id="gridColor" value="#808080" />
+					<label class="tool-name" for="gridColor">{{translations.grid_color}}</label>
+				</li>
 			</ul>
 		</div>
 	</div>

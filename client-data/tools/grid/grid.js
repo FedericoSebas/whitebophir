@@ -8,18 +8,10 @@
  *
  *
  * The JavaScript code in this page is free software: you can
- * redistribute it and/or modify it under the terms of the GNU
- * General Public License (GNU GPL) as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option)
- * any later version.  The code is distributed WITHOUT ANY WARRANTY;
- * without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+ * redistribute it and/or modify it under the terms of the GNU General Public License (GNU GPL) as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.  The code is distributed WITHOUT ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
  *
- * As additional permission under GNU GPL version 3 section 7, you
- * may distribute non-source (e.g., minimized or compacted) forms of
- * that code without the copy of the GNU GPL normally required by
- * section 4, provided you include this license notice and a URL
- * through which recipients can access the Corresponding Source.
+ * As additional permission under GNU GPL version 3 section 7, you may distribute non-source (e.g., minimized or compacted) forms of that code without the copy of the GNU GPL normally required by section 4, provided you include this license notice and a URL through which recipients can access the Corresponding Source.
  *
  * @licend
  */
@@ -112,6 +104,24 @@
     return gridContainer;
   })();
 
+  function setGridSize(size) {
+    var smallGrid = Tools.svg.getElementById("smallGrid");
+    var grid = Tools.svg.getElementById("grid");
+    smallGrid.setAttribute("width", size);
+    smallGrid.setAttribute("height", size);
+    grid.setAttribute("width", size * 10);
+    grid.setAttribute("height", size * 10);
+  }
+
+  function setGridColor(color) {
+    var smallGridPath = Tools.svg.querySelector("#smallGrid path");
+    var gridPath = Tools.svg.querySelector("#grid path");
+    var dotsCircle = Tools.svg.querySelector("#dots circle");
+    smallGridPath.setAttribute("stroke", color);
+    gridPath.setAttribute("stroke", color);
+    dotsCircle.setAttribute("fill", color);
+  }
+
   Tools.add({
     //The new tool
     name: "Grid",
@@ -122,4 +132,8 @@
     onstart: toggleGrid,
     mouseCursor: "crosshair",
   });
+
+  // Expose the functions to set grid size and color
+  Tools.setGridSize = setGridSize;
+  Tools.setGridColor = setGridColor;
 })(); //End of code isolation
