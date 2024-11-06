@@ -96,6 +96,18 @@
 					<input class="tool-icon" type="color" id="gridColor" value="#808080" />
 					<label class="tool-name" for="gridColor">{{translations.grid_color}}</label>
 				</li>
+				<li class="tool" tabindex="-1">
+					<button class="tool-icon" id="undoButton">
+						<img src="icon-undo.svg" alt="undo" />
+					</button>
+					<label class="tool-name" for="undoButton">{{translations.undo}}</label>
+				</li>
+				<li class="tool" tabindex="-1">
+					<button class="tool-icon" id="redoButton">
+						<img src="icon-redo.svg" alt="redo" />
+					</button>
+					<label class="tool-name" for="redoButton">{{translations.redo}}</label>
+				</li>
 			</ul>
 		</div>
 	</div>
@@ -122,6 +134,15 @@
 	<script src="../tools/image/image.js"></script>
 	{{#moderator}}<script src="../tools/clear/clear.js"></script>{{/moderator}}
 	<script src="../js/canvascolor.js"></script>
+	<script>
+		document.getElementById("undoButton").addEventListener("click", function () {
+			Tools.undo();
+		});
+
+		document.getElementById("redoButton").addEventListener("click", function () {
+			Tools.redo();
+		});
+	</script>
 </body>
 
 </html>

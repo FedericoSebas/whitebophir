@@ -160,3 +160,18 @@ Example: `docker run -e STATSD_URL=udp://127.0.0.1:8125 lovasoa/wbo`.
 
 - If you use **prometheus**, you can collect the metrics with [statsd-exporter](https://hub.docker.com/r/prom/statsd-exporter).
 - If you use **datadog**, you can collect the metrics with [dogstatsd](https://docs.datadoghq.com/developers/dogstatsd).
+
+## History, Undo, and Redo Features
+
+WBO now includes history tracking functionality to store actions and states, as well as undo and redo functionality. This allows users to revert or reapply their actions on the board.
+
+### History Tracking
+
+The history tracking functionality stores actions and states in a history stack. This allows users to undo or redo their actions on the board.
+
+### Undo and Redo
+
+The undo and redo functionality allows users to revert or reapply their actions on the board. The undo and redo buttons are available in the toolbar, and can be accessed using the following keyboard shortcuts:
+
+- Undo: `Ctrl + Z`
+- Redo: `Ctrl + Y`

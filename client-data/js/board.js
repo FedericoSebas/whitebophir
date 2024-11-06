@@ -4,7 +4,7 @@
  * @licstart  The following is the entire license notice for the
  *  JavaScript code in this page.
  *
- * Copyright (C) 2013  Ophir LOJKINE
+ * Copyright (C) 2013 Ophir LOJKINE
  *
  *
  * The JavaScript code in this page is free software: you can
@@ -371,6 +371,7 @@ Tools.drawAndSend = function (data, tool) {
   if (tool == null) tool = Tools.curTool;
   tool.draw(data, true);
   Tools.send(data, tool.name);
+  Tools.pushToHistory(data); // P4a87
 };
 
 //Object containing the messages that have been received before the corresponding tool
@@ -801,4 +802,72 @@ Tools.setGridSize = function (size) {
 Tools.setGridColor = function (color) {
   var gridContainer = document.getElementById("gridContainer");
   gridContainer.setAttribute("stroke", color);
+};
+
+// Pe622
+Tools.history = {
+  undoStack: [],
+  redoStack: [],
+};
+
+Tools.pushToHistory = function (action) {
+  Tools.history.undoStack.push(action);
+  Tools.history.redoStack = [];
+};
+
+Tools.undo = function () {
+  if (Tools.history.undoStack.length === 0) return;
+
+  var action = Tools.history.undoStack.pop();
+  Tools.history.redoStack.push(action);
+
+  // Handle undo logic based on action type
+  switch (action.type) {
+    case "line":
+    case "rect":
+    case "ellipse":
+    case "text":
+    case "image":
+      Tools.deleteAction(action);
+      break;
+    case "delete":
+      Tools.restoreAction(action);
+      break;
+    default:
+      console.error("Unknown action type for undo:", action.type);
+  }
+};
+
+Tools.redo = function () {
+  if (Tools.history.redoStack.length === 0) return;
+
+  var action = Tools.history.redoStack.pop();
+  Tools.history.undoStack.push(action);
+
+  // Handle redo logic based on action type
+  switch (action.type) {
+    case "line":
+    case "rect":
+    case "ellipse":
+    case "text":
+    case "image":
+      Tools.restoreAction(action);
+      break;
+    case "delete":
+      Tools.deleteAction(action);
+      break;
+    default:
+      console.error("Unknown action type for redo:", action.type);
+  }
+};
+
+Tools.deleteAction = function (action) {
+  var elem = Tools.svg.getElementById(action.id);
+  if (elem) {
+    Tools.drawingArea.removeChild(elem);
+  }
+};
+
+Tools.restoreAction = function (action) {
+  Tools.drawAndSend(action);
 };

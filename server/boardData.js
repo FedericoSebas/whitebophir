@@ -8,18 +8,10 @@
  *
  *
  * The JavaScript code in this page is free software: you can
- * redistribute it and/or modify it under the terms of the GNU
- * General Public License (GNU GPL) as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option)
- * any later version.  The code is distributed WITHOUT ANY WARRANTY;
- * without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+ * redistribute it and/or modify it under the terms of the GNU General Public License (GNU GPL) as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.  The code is distributed WITHOUT ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
  *
- * As additional permission under GNU GPL version 3 section 7, you
- * may distribute non-source (e.g., minimized or compacted) forms of
- * that code without the copy of the GNU GPL normally required by
- * section 4, provided you include this license notice and a URL
- * through which recipients can access the Corresponding Source.
+ * As additional permission under GNU GPL version 3 section 7, you may distribute non-source (e.g., minimized or compacted) forms of that code without the copy of the GNU GPL normally required by section 4, provided you include this license notice and a URL through which recipients can access the Corresponding Source.
  *
  * @licend
  * @module boardData
@@ -55,6 +47,10 @@ class BoardData {
     this.lastSaveDate = Date.now();
     this.users = new Set();
     this.saveMutex = new Mutex();
+    this.history = {
+      undoStack: [],
+      redoStack: [],
+    };
   }
 
   /** Adds data to the board
@@ -66,6 +62,7 @@ class BoardData {
     data.time = Date.now();
     this.validate(data);
     this.board[id] = data;
+    this.pushToHistory({ type: "set", id, data });
     this.delaySave();
   }
 
@@ -82,6 +79,7 @@ class BoardData {
     else obj._children = [child];
 
     this.validate(obj);
+    this.pushToHistory({ type: "addChild", parentId, child });
     this.delaySave();
     return true;
   }
@@ -103,6 +101,7 @@ class BoardData {
     } else if (create || obj !== undefined) {
       this.board[id] = data;
     }
+    this.pushToHistory({ type: "update", id, data, create });
     this.delaySave();
   }
 
@@ -122,6 +121,7 @@ class BoardData {
         }
       }
       this.board[newid] = newobj;
+      this.pushToHistory({ type: "copy", id, newid });
     } else {
       log("Copied object does not exist in board.", { object: id });
     }
@@ -132,6 +132,7 @@ class BoardData {
    */
   clear() {
     this.board = {};
+    this.pushToHistory({ type: "clear" });
     this.delaySave();
   }
 
@@ -145,6 +146,7 @@ class BoardData {
     }
     //KISS
     delete this.board[id];
+    this.pushToHistory({ type: "delete", id });
     this.delaySave();
   }
 
@@ -383,6 +385,79 @@ class BoardData {
       }
     }
     return boardData;
+  }
+
+  pushToHistory(action) {
+    this.history.undoStack.push(action);
+    this.history.redoStack = [];
+  }
+
+  undo() {
+    if (this.history.undoStack.length === 0) return;
+
+    const action = this.history.undoStack.pop();
+    this.history.redoStack.push(action);
+
+    switch (action.type) {
+      case "set":
+        delete this.board[action.id];
+        break;
+      case "addChild":
+        const parent = this.board[action.parentId];
+        if (parent && Array.isArray(parent._children)) {
+          parent._children = parent._children.filter(
+            (child) => child !== action.child
+          );
+        }
+        break;
+      case "update":
+        this.update(action.id, action.data, action.create);
+        break;
+      case "copy":
+        delete this.board[action.newid];
+        break;
+      case "clear":
+        this.board = {};
+        break;
+      case "delete":
+        this.board[action.id] = action.data;
+        break;
+      default:
+        console.error("Unknown action type for undo:", action.type);
+    }
+  }
+
+  redo() {
+    if (this.history.redoStack.length === 0) return;
+
+    const action = this.history.redoStack.pop();
+    this.history.undoStack.push(action);
+
+    switch (action.type) {
+      case "set":
+        this.board[action.id] = action.data;
+        break;
+      case "addChild":
+        const parent = this.board[action.parentId];
+        if (parent && Array.isArray(parent._children)) {
+          parent._children.push(action.child);
+        }
+        break;
+      case "update":
+        this.update(action.id, action.data, action.create);
+        break;
+      case "copy":
+        this.board[action.newid] = JSON.parse(JSON.stringify(this.board[action.id]));
+        break;
+      case "clear":
+        this.board = {};
+        break;
+      case "delete":
+        delete this.board[action.id];
+        break;
+      default:
+        console.error("Unknown action type for redo:", action.type);
+    }
   }
 }
 
