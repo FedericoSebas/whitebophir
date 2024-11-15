@@ -8,10 +8,17 @@
  *
  *
  * The JavaScript code in this page is free software: you can
- * redistribute it and/or modify it under the terms of the GNU General Public License (GNU GPL) as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.  The code is distributed WITHOUT ANY WARRANTY;
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+ * redistribute it and/or modify it under the terms of the GNU General Public License (GNU GPL) as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.  The code is distributed WITHOUT ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
  *
- * As additional permission under GNU GPL version 3 section 7, you may distribute non-source (e.g., minimized or compacted) forms of that code without the copy of the GNU GPL normally required by section 4, provided you include this license notice and a URL through which recipients can access the Corresponding Source.
+ * As additional permission under GNU GPL version 3 section 7, you
+ * may distribute non-source (e.g., minimized or compacted) forms of
+ * that code without the copy of the GNU GPL normally required by
+ * section 4, provided you include this license notice and a URL
+ * through which recipients can access the Corresponding Source.
  *
  * @licend
  */
@@ -802,3 +809,272 @@ Tools.setGridColor = function (color) {
   var gridContainer = document.getElementById("gridContainer");
   gridContainer.setAttribute("stroke", color);
 };
+
+// Add event listener for `paste` event to handle clipboard image data
+document.addEventListener("paste", function (event) {
+  const items = event.clipboardData.items;
+  for (let i = 0; i < items.length; i++) {
+    if (items[i].type.startsWith("image/")) {
+      const file = items[i].getAsFile();
+      const position = {
+        x: 0,
+        y: 0,
+      };
+      uploadImage(file, position);
+      break;
+    }
+  }
+});
+
+// Extract image data from clipboard and upload it to the server
+async function uploadImage(image, position) {
+  const id = Tools.generateUID();
+
+  // Get a preview of the image
+  const previewElement = await previewImage(image);
+
+  const dimensions = {
+    x: previewElement.width,
+    y: previewElement.height,
+  };
+
+  // Optimistically draw the image on the canvas before uploading.
+  createPreviewImageElement({
+    id,
+    type: "image",
+    href: previewElement.src,
+    opacity: 0.5,
+    x: position.x,
+    y: position.y,
+    x2: position.x + dimensions.x,
+    y2: position.y + dimensions.y,
+  });
+
+  // Upload the image to the server
+  const formData = new FormData();
+  formData.append("image", image);
+  formData.append("id", id);
+  formData.append("position", JSON.stringify(position));
+  formData.append("dimensions", JSON.stringify(dimensions));
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+
+    function onError(error) {
+      alert("An error occurred while attempting to upload the image.");
+      console.log("error: ", error);
+      reject(error);
+    }
+
+    function onProgress(event) {
+      // TODO: Show a loading indicator while the image is uploading.
+      console.log("progress: ", event);
+    }
+
+    function onLoad(response) {
+      if (xhr.status >= 400) {
+        alert("A server error occurred while uploading the image.");
+        reject(response);
+        console.log("onLoad: ", response);
+      }
+      resolve(response);
+    }
+
+    xhr.open("POST", `/image-upload/${Tools.boardName}`, true);
+    xhr.onerror = onError;
+    xhr.onprogress = onProgress;
+    xhr.onload = onLoad;
+    xhr.send(formData);
+  });
+}
+
+// Create a new image element on the whiteboard with the pasted image
+function createPreviewImageElement(data) {
+  const img = Tools.createSVGElement("image");
+  img.setAttribute("id", data.id);
+  img.setAttribute("href", data.href);
+  img.setAttribute("x", data.x);
+  img.setAttribute("y", data.y);
+  img.setAttribute("width", data.x2 - data.x);
+  img.setAttribute("height", data.y2 - data.y);
+  Tools.drawingArea.appendChild(img);
+  return img;
+}
+
+// Loads the image from the filesystem to generate a preview while uploading
+// occurs as well as to get the dimensions of the image.
+async function previewImage(image) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = function (event) {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = function () {
+        resolve(img);
+      };
+      img.onerror = function (error) {
+        reject(error);
+      };
+    };
+    reader.readAsDataURL(image);
+  });
+}
+    target.removeEventListener(event, listener);
+    // also attempt to remove with capture = true in IE
+    if (Tools.isIE) target.removeEventListener(event, listener, true);
+  }
+};
+
+(function () {
+  // Handle secondary tool switch with shift (key code 16)
+  function handleShift(active, evt) {
+    if (
+      evt.keyCode === 16 &&
+      Tools.curTool.secondary &&
+      Tools.curTool.secondary.active !== active
+    ) {
+      Tools.change(Tools.curTool.name);
+    }
+  }
+  window.addEventListener("keydown", handleShift.bind(null, true));
+  window.addEventListener("keyup", handleShift.bind(null, false));
+})();
+
+Tools.send = function (data, toolName) {
+  toolName = toolName || Tools.curTool.name;
+  var d = data;
+  d.tool = toolName;
+  Tools.applyHooks(Tools.messageHooks, d);
+  var message = {
+    board: Tools.boardName,
+    data: d,
+  };
+  Tools.socket.emit("broadcast", message);
+};
+
+Tools.drawAndSend = function (data, tool) {
+  if (tool == null) tool = Tools.curTool;
+  tool.draw(data, true);
+  Tools.send(data, tool.name);
+};
+
+//Object containing the messages that have been received before the corresponding tool
+//is loaded. keys : the name of the tool, values : array of messages for this tool
+Tools.pendingMessages = {};
+
+// Send a message to the corresponding tool
+function messageForTool(message) {
+  var name = message.tool,
+    tool = Tools.list[name];
+
+  if (tool) {
+    Tools.applyHooks(Tools.messageHooks, message);
+    tool.draw(message, false);
+  } else {
+    ///We received a message destinated to a tool that we don't have
+    //So we add it to the pending messages
+    if (!Tools.pendingMessages[name]) Tools.pendingMessages[name] = [message];
+    else Tools.pendingMessages[name].push(message);
+  }
+
+  if (message.tool !== "Hand" && message.transform != null) {
+    //this message has special info for the mover
+    messageForTool({
+      tool: "Hand",
+      type: "update",
+      transform: message.transform,
+      id: message.id,
+    });
+  }
+}
+
+// Apply the function to all arguments by batches
+function batchCall(fn, args) {
+  var BATCH_SIZE = 1024;
+  if (args.length === 0) {
+    return Promise.resolve();
+  } else {
+    var batch = args.slice(0, BATCH_SIZE);
+    var rest = args.slice(BATCH_SIZE);
+    return Promise.all(batch.map(fn))
+      .then(function () {
+        return new Promise(requestAnimationFrame);
+      })
+      .then(batchCall.bind(null, fn, rest));
+  }
+}
+
+// Call messageForTool recursively on the message and its children
+function handleMessage(message) {
+  //Check if the message is in the expected format
+  if (!message.tool && !message._children) {
+    console.error("Received a badly formatted message (no tool). ", message);
+  }
+  if (message.tool) messageForTool(message);
+  if (message._children) return batchCall(handleMessage, message._children);
+  else return Promise.resolve();
+}
+
+Tools.unreadMessagesCount = 0;
+Tools.newUnreadMessage = function () {
+  Tools.unreadMessagesCount++;
+  updateDocumentTitle();
+};
+
+window.addEventListener("focus", function () {
+  Tools.unreadMessagesCount = 0;
+  updateDocumentTitle();
+});
+
+function updateDocumentTitle() {
+  document.title =
+    (Tools.unreadMessagesCount ? "(" + Tools.unreadMessagesCount + ") " : "") +
+    Tools.boardName +
+    " | WBO";
+}
+
+(function () {
+  // Scroll and hash handling
+  var scrollTimeout,
+    lastStateUpdate = Date.now();
+
+  window.addEventListener("scroll", function onScroll() {
+    var scale = Tools.getScale();
+    var x = document.documentElement.scrollLeft / scale,
+      y = document.documentElement.scrollTop / scale;
+
+    clearTimeout(scrollTimeout);
+    scrollTimeout = setTimeout(function updateHistory() {
+      var hash =
+        "#" + (x | 0) + "," + (y | 0) + "," + Tools.getScale().toFixed(1);
+      if (
+        Date.now() - lastStateUpdate > 5000 &&
+        hash !== window.location.hash
+      ) {
+        window.history.pushState({}, "", hash);
+        lastStateUpdate = Date.now();
+      } else {
+        window.history.replaceState({}, "", hash);
+      }
+    }, 100);
+  });
+
+  function setScrollFromHash() {
+    var coords = window.location.hash.slice(1).split(",");
+    var x = coords[0] | 0;
+    var y = coords[1] | 0;
+    var scale = parseFloat(coords[2]);
+    resizeCanvas({ x: x, y: y });
+    Tools.setScale(scale);
+    window.scrollTo(x * scale, y * scale);
+  }
+
+  window.addEventListener("hashchange", setScrollFromHash, false);
+  window.addEventListener("popstate", setScrollFromHash, false);
+  window.addEventListener("DOMContentLoaded", setScrollFromHash, false);
+})();
+
+function resizeCanvas(m) {
+  //Enlarge the canvas whenever something is drawn near its border
+  var x = m.x | 0,
+    y = m.y | 0;

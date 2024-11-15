@@ -1,4 +1,3 @@
-
 /**
  *                        WHITEBOPHIR
  *********************************************************
@@ -9,18 +8,10 @@
  *
  *
  * The JavaScript code in this page is free software: you can
- * redistribute it and/or modify it under the terms of the GNU
- * General Public License (GNU GPL) as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option)
- * any later version.  The code is distributed WITHOUT ANY WARRANTY;
- * without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+ * redistribute it and/or modify it under the terms of the GNU General Public License (GNU GPL) as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.  The code is distributed WITHOUT ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
  *
- * As additional permission under GNU GPL version 3 section 7, you
- * may distribute non-source (e.g., minimized or compacted) forms of
- * that code without the copy of the GNU GPL normally required by
- * section 4, provided you include this license notice and a URL
- * through which recipients can access the Corresponding Source.
+ * As additional permission under GNU GPL version 3 section 7, you may distribute non-source (e.g., minimized or compacted) forms of that code without the copy of the GNU GPL normally required by section 4, provided you include this license notice and a URL through which recipients can access the Corresponding Source.
  *
  * @licend
  */
@@ -256,6 +247,7 @@
     */
   function onStart() {
     fileInput.addEventListener('change', onFileInputChange);
+    document.addEventListener('paste', onPaste);
   }
 
   /**
@@ -263,6 +255,26 @@
     */
   function onQuit() {
     fileInput.removeEventListener('change', onFileInputChange);
+    document.removeEventListener('paste', onPaste);
+  }
+
+  /**
+    * Handles the paste event to extract image data from the clipboard.
+    * @param {ClipboardEvent} event - The paste event.
+    */
+  function onPaste(event) {
+    const items = event.clipboardData.items;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.startsWith('image/')) {
+        const file = items[i].getAsFile();
+        const position = {
+          x: newImageDropPoint.x,
+          y: newImageDropPoint.y,
+        };
+        uploadImage(file, position);
+        break;
+      }
+    }
   }
 
   // List of all drag/drop events.
