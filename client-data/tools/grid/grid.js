@@ -29,21 +29,6 @@
 
   function createPatterns() {
     // create patterns
-    // small (inner) grid
-    var smallGrid = Tools.createSVGElement("pattern", {
-      id: "smallGrid",
-      width: "30",
-      height: "30",
-      patternUnits: "userSpaceOnUse",
-    });
-    smallGrid.appendChild(
-      Tools.createSVGElement("path", {
-        d: "M 30 0 L 0 0 0 30",
-        fill: "none",
-        stroke: "gray",
-        "stroke-width": "1",
-      }),
-    );
     // (outer) grid
     var grid = Tools.createSVGElement("pattern", {
       id: "grid",
@@ -85,7 +70,6 @@
     );
 
     var defs = Tools.svg.getElementById("defs");
-    defs.appendChild(smallGrid);
     defs.appendChild(grid);
     defs.appendChild(dots);
   }
@@ -105,19 +89,18 @@
   })();
 
   function setGridSize(size) {
-    var smallGrid = Tools.svg.getElementById("smallGrid");
     var grid = Tools.svg.getElementById("grid");
-    smallGrid.setAttribute("width", size);
-    smallGrid.setAttribute("height", size);
+    var gridLine = Tools.svg.querySelector("#grid path");
     grid.setAttribute("width", size * 10);
     grid.setAttribute("height", size * 10);
+    gridLine.setAttribute("d", `M ${size * 10} 0 L 0 0 0 ${size * 10}`);
   }
 
   function setGridColor(color) {
-    var smallGridPath = Tools.svg.querySelector("#smallGrid path");
+    var gridLine = Tools.svg.querySelector("#grid path");
     var gridPath = Tools.svg.querySelector("#grid path");
     var dotsCircle = Tools.svg.querySelector("#dots circle");
-    smallGridPath.setAttribute("stroke", color);
+    gridLine.setAttribute("stroke", color);
     gridPath.setAttribute("stroke", color);
     dotsCircle.setAttribute("fill", color);
   }
